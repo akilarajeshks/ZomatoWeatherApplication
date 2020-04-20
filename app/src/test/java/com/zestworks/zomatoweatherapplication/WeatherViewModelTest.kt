@@ -10,6 +10,7 @@ import com.zestworks.zomatoweatherapplication.viewmodel.WeatherViewModel
 import com.zestworks.zomatoweatherapplication.viewmodel.WeatherViewState
 import io.mockk.coEvery
 import io.mockk.mockk
+import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestCoroutineDispatcher
@@ -106,6 +107,16 @@ class WeatherViewModelTest {
             testObserver.onChanged(LCE.Loading)
             testObserver.onChanged(LCE.Content(weatherViewState))
         }
+    }
 
+    @Test
+    fun `test for location permission denied`(){
+        weatherViewModel.onLocationPermissionDenied()
+
+        val errorReason = "Location Access Denied. Please enable access and retry"
+
+        verify{
+            testObserver.onChanged(LCE.Error(errorReason))
+        }
     }
 }
