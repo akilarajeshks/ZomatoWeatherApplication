@@ -18,16 +18,13 @@ class WeatherViewModel(
 ) : ViewModel() {
 
     private val _currentViewState =
-        MutableLiveData<LCE<WeatherViewState>>().apply { postValue(LCE.None) }
+        MutableLiveData<LCE<WeatherViewState>>()
     val currentViewState = _currentViewState as LiveData<LCE<WeatherViewState>>
 
-    fun onUILoad(location: Location) {
-        if (_currentViewState.value == null) {
-            _currentViewState.postValue(LCE.None)
-        } else {
-            if (_currentViewState.value==LCE.None || _currentViewState.value is LCE.Error) {
-                _currentViewState.postValue(LCE.Loading)
-            }
+    fun fetchWeatherData(location: Location) {
+        if (_currentViewState.value == null ) {
+            _currentViewState.postValue(LCE.Loading)
+
             viewModelScope.launch(coroutineDispatcher) {
                 when (val weatherNetworkResult =
                     repository.getWeatherInfo(location.lat.toInt(), location.long.toInt())) {
@@ -62,9 +59,7 @@ class WeatherViewModel(
         _currentViewState.postValue(LCE.Error("Location Access Denied. Please enable access and retry"))
     }
 
-    fun onLocationFetched(latitude: Double, longitude: Double) {
-        onUILoad(Location(latitude, longitude))
+    fun retryButtonClicked() {
+        _currentViewState.postValue(null)
     }
-
-
 }

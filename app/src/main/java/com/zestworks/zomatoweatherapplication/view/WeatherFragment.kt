@@ -23,38 +23,38 @@ class WeatherFragment : Fragment(R.layout.fragment_weather) {
         super.onStart()
         weatherViewModel.currentViewState.observe(activity!!, Observer {
             when (it) {
-                LCE.None->{
-                    getLocationData()
-                }
-                is LCE.Content ->{
-                    content_group.visibility=View.VISIBLE
-                    error_group.visibility=View.GONE
-                    loading_group.visibility=View.GONE
+                is LCE.Content -> {
+                    content_group.visibility = View.VISIBLE
+                    error_group.visibility = View.GONE
+                    loading_group.visibility = View.GONE
 
                     parent.setBackgroundColor(Color.WHITE)
                     city_text_view.text = it.viewData.cityName
-                    temperature.text = it.viewData.currentDayTemp+"℃"
-                    if (forecast_recycler.adapter == null){
+                    temperature.text = it.viewData.currentDayTemp + "℃"
+                    if (forecast_recycler.adapter == null) {
                         forecast_recycler.apply {
                             adapter = ForecastListAdapter(it.viewData.forecast)
                             layoutManager = LinearLayoutManager(this@WeatherFragment.context)
                         }
-                    }else{
+                    } else {
                         forecast_recycler.adapter?.notifyDataSetChanged()
                     }
                 }
                 is LCE.Error -> {
-                    content_group.visibility=View.GONE
-                    error_group.visibility=View.VISIBLE
-                    loading_group.visibility=View.GONE
+                    content_group.visibility = View.GONE
+                    error_group.visibility = View.VISIBLE
+                    loading_group.visibility = View.GONE
                     parent.setBackgroundColor(Color.parseColor("#E85959"))
-                    btn_retry.setOnClickListener { getLocationData() }
+                    btn_retry.setOnClickListener {
+                        weatherViewModel.retryButtonClicked()
+                        fetchLocationData()
+                    }
                 }
-                LCE.Loading ->{
+                LCE.Loading -> {
                     parent.setBackgroundColor(Color.WHITE)
-                    content_group.visibility=View.GONE
-                    error_group.visibility=View.GONE
-                    loading_group.visibility=View.VISIBLE
+                    content_group.visibility = View.GONE
+                    error_group.visibility = View.GONE
+                    loading_group.visibility = View.VISIBLE
 
                     ObjectAnimator.ofFloat(loader, "rotation", 180f, 0f).apply {
                         duration = 2000
@@ -65,10 +65,10 @@ class WeatherFragment : Fragment(R.layout.fragment_weather) {
                 }
             }
         })
-        //weatherViewModel.onUILoad()
+        fetchLocationData()
     }
 
-    private fun getLocationData() {
+    private fun fetchLocationData() {
         if (ContextCompat.checkSelfPermission(
                 activity!!,
                 permission.ACCESS_COARSE_LOCATION
@@ -79,12 +79,13 @@ class WeatherFragment : Fragment(R.layout.fragment_weather) {
                 PERMISSION_CONSTANT
             )
         } else {
-            val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(activity!!)
+            val fusedLocationProviderClient =
+                LocationServices.getFusedLocationProviderClient(activity!!)
             fusedLocationProviderClient.lastLocation.addOnSuccessListener {
-                if (it == null){
+                if (it == null) {
                     weatherViewModel.onLocationPermissionDenied()
-                }else{
-                    weatherViewModel.onLocationFetched(it.latitude,it.longitude)
+                } else {
+                    weatherViewModel.fetchWeatherData(Location(it.latitude, it.longitude))
                 }
             }
         }
@@ -92,16 +93,21 @@ class WeatherFragment : Fragment(R.layout.fragment_weather) {
 
 
     @SuppressLint("MissingPermission")
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         when (requestCode) {
             PERMISSION_CONSTANT -> {
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(activity!!)
+                    val fusedLocationProviderClient =
+                        LocationServices.getFusedLocationProviderClient(activity!!)
                     fusedLocationProviderClient.lastLocation.addOnSuccessListener {
-                        if (it == null){
+                        if (it == null) {
                             weatherViewModel.onLocationPermissionDenied()
-                        }else{
-                            weatherViewModel.onLocationFetched(it.latitude,it.longitude)
+                        } else {
+                            weatherViewModel.fetchWeatherData(Location(it.latitude, it.longitude))
                         }
                     }
                 } else if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_DENIED) {

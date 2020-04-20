@@ -47,11 +47,10 @@ class WeatherViewModelTest {
     fun `verify if data is loaded on network success`() {
         coEvery { repository.getWeatherInfo(location.lat.toInt(), location.long.toInt()) }.returns(NetworkResult.Success(weatherResponse))
 
-        weatherViewModel.onUILoad(location=location)
+        weatherViewModel.fetchWeatherData(location=location)
         testCoroutineDispatcher.advanceUntilIdle()
 
         verifyOrder {
-            testObserver.onChanged(LCE.None)
             testObserver.onChanged(LCE.Loading)
             testObserver.onChanged(LCE.Content(weatherViewState))
         }
@@ -62,11 +61,10 @@ class WeatherViewModelTest {
         val errorReason = "No Internet"
         coEvery { repository.getWeatherInfo(location.lat.toInt(), location.long.toInt()) }.returns(NetworkResult.Error(errorReason))
 
-        weatherViewModel.onUILoad(location=location)
+        weatherViewModel.fetchWeatherData(location=location)
         testCoroutineDispatcher.advanceUntilIdle()
 
         verifyOrder {
-            testObserver.onChanged(LCE.None)
             testObserver.onChanged(LCE.Loading)
             testObserver.onChanged(LCE.Error(errorReason))
         }
@@ -76,14 +74,38 @@ class WeatherViewModelTest {
     fun `test network call is made only once on rotation`() {
         coEvery { repository.getWeatherInfo(location.lat.toInt(), location.long.toInt()) }.returns(NetworkResult.Success(weatherResponse))
 
-        weatherViewModel.onUILoad(location=location)
-        weatherViewModel.onUILoad(location=location)
+        weatherViewModel.fetchWeatherData(location=location)
+        weatherViewModel.fetchWeatherData(location=location)
         testCoroutineDispatcher.advanceUntilIdle()
 
         verifyOrder {
-            testObserver.onChanged(LCE.None)
             testObserver.onChanged(LCE.Loading)
             testObserver.onChanged(LCE.Content(weatherViewState))
         }
+    }
+
+    @Test
+    fun `test retry button calls the network`(){
+        val errorReason = "No Internet"
+        coEvery { repository.getWeatherInfo(location.lat.toInt(), location.long.toInt()) }.returns(NetworkResult.Error(errorReason))
+
+        weatherViewModel.fetchWeatherData(location=location)
+        testCoroutineDispatcher.advanceUntilIdle()
+
+        verifyOrder {
+            testObserver.onChanged(LCE.Loading)
+            testObserver.onChanged(LCE.Error(errorReason))
+        }
+
+        coEvery { repository.getWeatherInfo(location.lat.toInt(), location.long.toInt()) }.returns(NetworkResult.Success(weatherResponse))
+
+        weatherViewModel.retryButtonClicked()
+        weatherViewModel.fetchWeatherData(location=location)
+
+        verifyOrder {
+            testObserver.onChanged(LCE.Loading)
+            testObserver.onChanged(LCE.Content(weatherViewState))
+        }
+
     }
 }
