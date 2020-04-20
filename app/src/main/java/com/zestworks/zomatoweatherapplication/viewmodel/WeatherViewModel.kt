@@ -7,20 +7,30 @@ import androidx.lifecycle.viewModelScope
 import com.zestworks.zomatoweatherapplication.common.LCE
 import com.zestworks.zomatoweatherapplication.repository.NetworkResult
 import com.zestworks.zomatoweatherapplication.repository.Repository
+import com.zestworks.zomatoweatherapplication.view.Location
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.launch
 import java.util.*
 
-class WeatherViewModel(private val repository: Repository, private val coroutineDispatcher: CoroutineDispatcher) : ViewModel() {
-    private val _currentViewState = MutableLiveData<LCE<WeatherViewState>>()
+class WeatherViewModel(
+    private val repository: Repository,
+    private val coroutineDispatcher: CoroutineDispatcher
+) : ViewModel() {
+
+    private val _currentViewState =
+        MutableLiveData<LCE<WeatherViewState>>().apply { postValue(LCE.None) }
     val currentViewState = _currentViewState as LiveData<LCE<WeatherViewState>>
 
-    fun onUILoad() {
+    fun onUILoad(location: Location) {
         if (_currentViewState.value == null) {
-            _currentViewState.postValue(LCE.Loading)
-
+            _currentViewState.postValue(LCE.None)
+        } else {
+            if (_currentViewState.value==LCE.None || _currentViewState.value is LCE.Error) {
+                _currentViewState.postValue(LCE.Loading)
+            }
             viewModelScope.launch(coroutineDispatcher) {
-                when (val weatherNetworkResult = repository.getWeatherInfo()) {
+                when (val weatherNetworkResult =
+                    repository.getWeatherInfo(location.lat.toInt(), location.long.toInt())) {
                     is NetworkResult.Success -> {
                         val forecastList = weatherNetworkResult.data.list.groupBy {
                             val cal = Calendar.getInstance()
@@ -28,14 +38,15 @@ class WeatherViewModel(private val repository: Repository, private val coroutine
                             cal.get(Calendar.DAY_OF_WEEK)
                         }.entries.drop(1).take(4).map {
                             ForecastViewState(
-                                    day = it.key,
-                                    temp = it.value.first().main.temp.toInt().toString()
+                                day = it.key,
+                                temp = it.value.first().main.temp.toInt().toString()
                             )
                         }
                         val weatherViewState = WeatherViewState(
-                                cityName = weatherNetworkResult.data.city.name,
-                                currentDayTemp = weatherNetworkResult.data.list.first().main.temp.toInt().toString(),
-                                forecast = forecastList
+                            cityName = weatherNetworkResult.data.city.name,
+                            currentDayTemp = weatherNetworkResult.data.list.first().main.temp.toInt()
+                                .toString(),
+                            forecast = forecastList
                         )
                         _currentViewState.postValue(LCE.Content(viewData = weatherViewState))
                     }
@@ -46,4 +57,14 @@ class WeatherViewModel(private val repository: Repository, private val coroutine
             }
         }
     }
+
+    fun onLocationPermissionDenied() {
+        _currentViewState.postValue(LCE.Error("Location Access Denied. Please enable access and retry"))
+    }
+
+    fun onLocationFetched(latitude: Double, longitude: Double) {
+        onUILoad(Location(latitude, longitude))
+    }
+
+
 }

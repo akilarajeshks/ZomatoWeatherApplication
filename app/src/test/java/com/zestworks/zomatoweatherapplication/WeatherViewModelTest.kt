@@ -5,6 +5,7 @@ import androidx.lifecycle.Observer
 import com.zestworks.zomatoweatherapplication.common.LCE
 import com.zestworks.zomatoweatherapplication.repository.NetworkResult
 import com.zestworks.zomatoweatherapplication.repository.Repository
+import com.zestworks.zomatoweatherapplication.view.Location
 import com.zestworks.zomatoweatherapplication.viewmodel.WeatherViewModel
 import com.zestworks.zomatoweatherapplication.viewmodel.WeatherViewState
 import io.mockk.coEvery
@@ -30,6 +31,7 @@ class WeatherViewModelTest {
     private val testObserver: Observer<LCE<WeatherViewState>> = mockk(relaxed = true)
 
     private val testCoroutineDispatcher = TestCoroutineDispatcher()
+    private val location = Location(2.0, 2.0)
 
     @Before
     fun setup() {
@@ -43,12 +45,13 @@ class WeatherViewModelTest {
 
     @Test
     fun `verify if data is loaded on network success`() {
-        coEvery { repository.getWeatherInfo() }.returns(NetworkResult.Success(weatherResponse))
+        coEvery { repository.getWeatherInfo(location.lat.toInt(), location.long.toInt()) }.returns(NetworkResult.Success(weatherResponse))
 
-        weatherViewModel.onUILoad()
+        weatherViewModel.onUILoad(location=location)
         testCoroutineDispatcher.advanceUntilIdle()
 
         verifyOrder {
+            testObserver.onChanged(LCE.None)
             testObserver.onChanged(LCE.Loading)
             testObserver.onChanged(LCE.Content(weatherViewState))
         }
@@ -57,12 +60,13 @@ class WeatherViewModelTest {
     @Test
     fun `verify if Network Error is handled`() {
         val errorReason = "No Internet"
-        coEvery { repository.getWeatherInfo() }.returns(NetworkResult.Error(errorReason))
+        coEvery { repository.getWeatherInfo(location.lat.toInt(), location.long.toInt()) }.returns(NetworkResult.Error(errorReason))
 
-        weatherViewModel.onUILoad()
+        weatherViewModel.onUILoad(location=location)
         testCoroutineDispatcher.advanceUntilIdle()
 
         verifyOrder {
+            testObserver.onChanged(LCE.None)
             testObserver.onChanged(LCE.Loading)
             testObserver.onChanged(LCE.Error(errorReason))
         }
@@ -70,13 +74,14 @@ class WeatherViewModelTest {
 
     @Test
     fun `test network call is made only once on rotation`() {
-        coEvery { repository.getWeatherInfo() }.returns(NetworkResult.Success(weatherResponse))
+        coEvery { repository.getWeatherInfo(location.lat.toInt(), location.long.toInt()) }.returns(NetworkResult.Success(weatherResponse))
 
-        weatherViewModel.onUILoad()
-        weatherViewModel.onUILoad()
+        weatherViewModel.onUILoad(location=location)
+        weatherViewModel.onUILoad(location=location)
         testCoroutineDispatcher.advanceUntilIdle()
 
         verifyOrder {
+            testObserver.onChanged(LCE.None)
             testObserver.onChanged(LCE.Loading)
             testObserver.onChanged(LCE.Content(weatherViewState))
         }
