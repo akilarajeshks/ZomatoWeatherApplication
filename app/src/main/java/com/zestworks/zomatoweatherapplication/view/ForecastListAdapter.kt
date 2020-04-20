@@ -1,6 +1,5 @@
 package com.zestworks.zomatoweatherapplication.view
 
-import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,33 +12,32 @@ import java.util.Calendar.*
 class ForecastListAdapter(private val forecastList: List<ForecastViewState>) :
     RecyclerView.Adapter<ForecastListAdapter.ForecastItemHolder>() {
 
-    class ForecastItemHolder(val view: View) : RecyclerView.ViewHolder(view) {
+    class ForecastItemHolder(view: View) : RecyclerView.ViewHolder(view) {
         val dayTextView: TextView = view.findViewById(R.id.forecast_day)
         val temperatureTextView: TextView = view.findViewById(R.id.forecast_temp)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ForecastItemHolder {
-        return ForecastItemHolder(
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ForecastItemHolder =
+        ForecastItemHolder(
             LayoutInflater.from(parent.context).inflate(R.layout.forecast_item, parent, false)
         )
-    }
 
-    override fun getItemCount(): Int {
-        return forecastList.size
-    }
+    override fun getItemCount(): Int = forecastList.size
 
     override fun onBindViewHolder(holder: ForecastItemHolder, position: Int) {
-        holder.dayTextView.text =  when(forecastList[position].day){
-            SUNDAY -> "Sunday"
-            MONDAY -> "Monday"
-            TUESDAY -> "Tuesday"
-            WEDNESDAY -> "Wednesday"
-            THURSDAY -> "Thursday"
-            FRIDAY -> "Friday"
-            SATURDAY -> "Saturday"
-            else -> "-- check response --"
+        holder.apply {
+            dayTextView.text = when (forecastList[position].day) {
+                SUNDAY -> itemView.context.getString(R.string.sunday)
+                MONDAY -> itemView.context.getString(R.string.monday)
+                TUESDAY -> itemView.context.getString(R.string.tuesday)
+                WEDNESDAY -> itemView.context.getString(R.string.wednesday)
+                THURSDAY -> itemView.context.getString(R.string.thursday)
+                FRIDAY -> itemView.context.getString(R.string.friday)
+                SATURDAY -> itemView.context.getString(R.string.saturday)
+                else -> "-- check response --"
+            }
+            temperatureTextView.text =
+                holder.itemView.context.getString(R.string.celsius, forecastList[position].temp)
         }
-        val temp=forecastList[position].temp
-        holder.temperatureTextView.text = "$temp℃"
     }
 }

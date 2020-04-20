@@ -1,11 +1,14 @@
 package com.zestworks.zomatoweatherapplication.repository
 
-class NetworkWeatherRepository(private val networkService: NetworkService) : Repository {
+import com.zestworks.zomatoweatherapplication.repository.NetworkResult.Error
+import com.zestworks.zomatoweatherapplication.repository.NetworkResult.Success
+
+class NetworkWeatherRepository(private val networkService: NetworkService) : WeatherRepository {
     override suspend fun getWeatherInfo(lat: Int, long: Int): NetworkResult<WeatherResponse> {
         return try {
-            NetworkResult.Success(networkService.getWeatherInfo(lat, long))
+            Success(networkService.getWeatherInfo(lat, long))
         } catch (exception: Exception) {
-            NetworkResult.Error("Network response failed")
+            Error(exception.message ?: "Network request failed")
         }
     }
 }

@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.location.LocationServices
 import com.zestworks.zomatoweatherapplication.R
 import com.zestworks.zomatoweatherapplication.common.LCE
+import com.zestworks.zomatoweatherapplication.viewmodel.Location
 import com.zestworks.zomatoweatherapplication.viewmodel.WeatherViewModel
 import kotlinx.android.synthetic.main.fragment_weather.*
 import org.koin.android.viewmodel.ext.android.viewModel
@@ -21,7 +22,7 @@ class WeatherFragment : Fragment(R.layout.fragment_weather) {
     private val weatherViewModel: WeatherViewModel by viewModel()
     override fun onStart() {
         super.onStart()
-        weatherViewModel.currentViewState.observe(activity!!, Observer {
+        weatherViewModel.currentViewState.observe(viewLifecycleOwner, Observer {
             when (it) {
                 is LCE.Content -> {
                     content_group.visibility = View.VISIBLE
@@ -30,7 +31,7 @@ class WeatherFragment : Fragment(R.layout.fragment_weather) {
 
                     parent.setBackgroundColor(Color.WHITE)
                     city_text_view.text = it.viewData.cityName
-                    temperature.text = it.viewData.currentDayTemp + "℃"
+                    temperature.text = getString(R.string.celsius, it.viewData.currentDayTemp)
                     if (forecast_recycler.adapter == null) {
                         forecast_recycler.apply {
                             adapter = ForecastListAdapter(it.viewData.forecast)
@@ -70,7 +71,7 @@ class WeatherFragment : Fragment(R.layout.fragment_weather) {
 
     private fun fetchLocationData() {
         if (ContextCompat.checkSelfPermission(
-                activity!!,
+                requireContext(),
                 permission.ACCESS_COARSE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
@@ -80,12 +81,17 @@ class WeatherFragment : Fragment(R.layout.fragment_weather) {
             )
         } else {
             val fusedLocationProviderClient =
-                LocationServices.getFusedLocationProviderClient(activity!!)
+                LocationServices.getFusedLocationProviderClient(requireContext())
             fusedLocationProviderClient.lastLocation.addOnSuccessListener {
                 if (it == null) {
                     weatherViewModel.onLocationPermissionDenied()
                 } else {
-                    weatherViewModel.fetchWeatherData(Location(it.latitude, it.longitude))
+                    weatherViewModel.fetchWeatherData(
+                        Location(
+                            it.latitude,
+                            it.longitude
+                        )
+                    )
                 }
             }
         }
@@ -102,12 +108,17 @@ class WeatherFragment : Fragment(R.layout.fragment_weather) {
             PERMISSION_CONSTANT -> {
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                     val fusedLocationProviderClient =
-                        LocationServices.getFusedLocationProviderClient(activity!!)
+                        LocationServices.getFusedLocationProviderClient(requireContext())
                     fusedLocationProviderClient.lastLocation.addOnSuccessListener {
                         if (it == null) {
                             weatherViewModel.onLocationPermissionDenied()
                         } else {
-                            weatherViewModel.fetchWeatherData(Location(it.latitude, it.longitude))
+                            weatherViewModel.fetchWeatherData(
+                                Location(
+                                    it.latitude,
+                                    it.longitude
+                                )
+                            )
                         }
                     }
                 } else if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_DENIED) {

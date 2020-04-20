@@ -10,6 +10,7 @@ import java.io.File
 
 val jsonResponse =
     File("src/test/java/com/zestworks/zomatoweatherapplication/successfulResponse.json").readText()
+
 val gson: Gson = GsonBuilder()
     .setDateFormat("yyyy-mm-dd HH:mm:ss").create()
 val weatherResponse: WeatherResponse = gson.fromJson(jsonResponse, WeatherResponse::class.java)

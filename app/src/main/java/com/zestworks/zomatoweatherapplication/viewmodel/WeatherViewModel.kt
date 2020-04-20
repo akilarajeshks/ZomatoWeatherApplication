@@ -6,14 +6,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zestworks.zomatoweatherapplication.common.LCE
 import com.zestworks.zomatoweatherapplication.repository.NetworkResult
-import com.zestworks.zomatoweatherapplication.repository.Repository
-import com.zestworks.zomatoweatherapplication.view.Location
+import com.zestworks.zomatoweatherapplication.repository.WeatherRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.launch
 import java.util.*
 
 class WeatherViewModel(
-    private val repository: Repository,
+    private val weatherRepository: WeatherRepository,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
@@ -27,7 +26,7 @@ class WeatherViewModel(
 
             viewModelScope.launch(coroutineDispatcher) {
                 when (val weatherNetworkResult =
-                    repository.getWeatherInfo(location.lat.toInt(), location.long.toInt())) {
+                    weatherRepository.getWeatherInfo(location.lat.toInt(), location.long.toInt())) {
                     is NetworkResult.Success -> {
                         val forecastList = weatherNetworkResult.data.list.groupBy {
                             val cal = Calendar.getInstance()

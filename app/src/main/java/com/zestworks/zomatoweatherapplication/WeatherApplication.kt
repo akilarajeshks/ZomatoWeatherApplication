@@ -5,7 +5,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.zestworks.zomatoweatherapplication.repository.NetworkService
 import com.zestworks.zomatoweatherapplication.repository.NetworkWeatherRepository
-import com.zestworks.zomatoweatherapplication.repository.Repository
+import com.zestworks.zomatoweatherapplication.repository.WeatherRepository
 import com.zestworks.zomatoweatherapplication.viewmodel.WeatherViewModel
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidContext
@@ -20,8 +20,9 @@ class WeatherApplication : Application() {
         super.onCreate()
 
         val module = module {
-            factory {  provideRetrofit() }
-            single<Repository> { NetworkWeatherRepository(get()) }
+            single { provideGson() }
+            single {  provideRetrofit(get()) }
+            single<WeatherRepository> { NetworkWeatherRepository(get()) }
             viewModel { WeatherViewModel(get(), Dispatchers.IO) }
         }
 
@@ -31,10 +32,13 @@ class WeatherApplication : Application() {
         }
     }
 
-    private fun provideRetrofit(): NetworkService {
-        val baseURL = "https://api.openweathermap.org/data/2.5/"
-        val gson: Gson = GsonBuilder()
+    private fun provideGson(): Gson {
+        return GsonBuilder()
             .setDateFormat("yyyy-mm-dd HH:mm:ss").create()
+    }
+
+    private fun provideRetrofit(gson: Gson): NetworkService {
+        val baseURL = "https://api.openweathermap.org/data/2.5/"
         val retrofit = Retrofit.Builder().baseUrl(baseURL)
             .addConverterFactory(GsonConverterFactory.create(gson)).build()
         return retrofit.create(NetworkService::class.java)
